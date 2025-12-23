@@ -25,21 +25,22 @@ public class ContactController {
     public ResponseEntity<Map<String, Object>> submit(
             @Valid @RequestBody ContactMessage message) {
 
-        service.save(message);
-
         Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("message", "Message sent successfully");
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+        try {
+            service.sendContactEmail(message);
 
-    @GetMapping("/messages")
-    public ResponseEntity<Map<String, Object>> all() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("messages", service.findAll());
-        response.put("count", service.count());
-        return ResponseEntity.ok(response);
+            response.put("success", true);
+            response.put("message", "Message sent successfully! I'll get back to you soon.");
+
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Failed to send message. Please try again later.");
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,6 +53,7 @@ public class ContactController {
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
+        response.put("message", "Validation failed");
         response.put("errors", errors);
 
         return ResponseEntity.badRequest().body(response);
